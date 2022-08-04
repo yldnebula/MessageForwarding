@@ -7,10 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.event.EventListener;
-import org.springframework.core.annotation.Order;
-import org.springframework.scheduling.annotation.Async;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.stereotype.Component;
 
 import javax.websocket.*;
@@ -28,25 +25,25 @@ public class SocketServer {
     private static final Logger logger = LoggerFactory.getLogger(SocketServer.class);
 
     private static ConcurrentHashMap<String, Session> sessionMap = new ConcurrentHashMap<>();
+//    private static ConcurrentHashMap<String, Session> sessionMap = new ConcurrentHashMap<>();
     private Session session;
 
+    private static final String SYS_ID = "SERVER";
+    private static final String ALL_ID = "ALL";
+
+    private static ApplicationContext applicationContext;
+
     @Autowired
-    private ApplicationContext applicationContext;
-
-
+    public void setChatRecodeService(ApplicationContext appContext) {
+        applicationContext= appContext;
+    }
     @OnOpen
     public void open(Session session, @PathParam(value = "userId") String userName) {
         this.session = session;
-//			if(sessionMap.containsKey(userName)){
-//				logger.info("客户端:【{}】连接成功",userName);
-//
-//			}else{
-//
-//			}
         sessionMap.put(userName, session);
         logger.info("客户端:【{}】连接成功", userName);
         //群发通知
-        sendAll(new Message("server", "all", "客户端【"+userName+"】已上线！"));
+        sendMessage(new Message<>(SYS_ID, ALL_ID, "客户端【"+userName+"】已上线！",1, getOnlineUsers()));
     }
 
     /**
@@ -60,14 +57,16 @@ public class SocketServer {
         String source = mess.getSource();
         String target = mess.getTarget();
 
-        applicationContext.publishEvent(new MyEvent(this));
-
-        logger.info("客户端:【{}】发送信息:{} 给客户端【{}】", source, text, target);
-        Session t_sess = sessionMap.get(target);
-        if (t_sess == null) {
-            logger.info("发送信息失败，【{}】未上线", target);
-        } else {
-            sendMessage(mess, t_sess);
+        if(mess.getResponse()){
+            applicationContext.publishEvent(new MyEvent(this, mess));
+        }else{
+            logger.info("客户端:【{}】发送信息:{} 给客户端【{}】", source, text, target);
+            Session t_sess = sessionMap.get(target);
+            if (t_sess == null) {
+                logger.info("发送信息失败，【{}】未上线", target);
+            } else {
+                sendMessage(mess);
+            }
         }
     }
 
@@ -86,7 +85,8 @@ public class SocketServer {
             }
         }
         //群发通知
-        sendAll(new Message("server", "all", "客户端【"+username+"】下线！"));
+        sendMessage(new Message<>(SYS_ID, ALL_ID, "客户端【"+username+"】下线！", 1, getOnlineUsers()));
+
     }
 
     /**
@@ -106,7 +106,7 @@ public class SocketServer {
             }
         }
         //群发通知
-        sendAll(new Message("server", "all", "客户端【"+username+"】下线！"));
+        sendMessage(new Message<>(SYS_ID, ALL_ID, "客户端【" + username + "】下线！", 1, getOnlineUsers()));
     }
 
 
@@ -115,11 +115,19 @@ public class SocketServer {
      * 拿到其对应的session，调用信息推送的方法
      *
      * @param message
-     * @param targetSession
      */
-    public synchronized static void sendMessage(Message message, Session targetSession) {
-        targetSession.getAsyncRemote().sendText(JSON.toJSONString(message));
-        logger.info("消息发送成功！");
+    public synchronized static void sendMessage(Message message) {
+        String target = message.getTarget();
+        if(target.equals(ALL_ID)){
+            for (Session session : sessionMap.values()) {
+                session.getAsyncRemote().sendText(JSON.toJSONString(message));
+            }
+            logger.info("推送给所有客户端 :【{}】", message.getText());
+        }else{
+            Session targetSession = sessionMap.get(target);
+            targetSession.getAsyncRemote().sendText(JSON.toJSONString(message));
+            logger.info("消息发送成功！");
+        }
     }
 
     /**
@@ -130,16 +138,5 @@ public class SocketServer {
     public synchronized static List<String> getOnlineUsers() {
         List<String> onlineUsers = new ArrayList<>(sessionMap.keySet());
         return onlineUsers;
-    }
-
-    /**
-     * 信息群发
-     */
-    public synchronized static void sendAll(Message message) {
-        for (Session sess : sessionMap.values()) {
-            sendMessage(message, sess);
-        }
-
-        logger.info("推送给所有客户端 :【{}】", message.getText());
     }
 }

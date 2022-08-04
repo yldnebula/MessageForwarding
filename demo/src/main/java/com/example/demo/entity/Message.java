@@ -6,23 +6,34 @@ import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
 import java.io.Serializable;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Message implements Serializable {
+public class Message<T> implements Serializable {
     private static final long serialVersionUID = 1L;
+    private int type = 0;//0:普通消息，1:上下线通知
     private String source;
     private String target;
     private String text;
 
-    private boolean isSync=false;
+    private T data;
 
-    private boolean isResponse=false;
+    private Boolean response=false;
 
     public Message(String source, String target, String text){
         this.source = source;
         this.target = target;
         this.text = text;
     }
+
+    public Message(String source, String target, String text, int type, T data){
+        this.source = source;
+        this.target = target;
+        this.text = text;
+        this.data = data;
+        this.type = type;
+    }
+
 }

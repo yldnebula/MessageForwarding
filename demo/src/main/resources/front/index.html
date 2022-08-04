@@ -3,36 +3,127 @@
 <head>
   <meta charset="UTF-8"/>
   <title>客户端</title>
+  <style>
+    .divright {
+      float: right;
+      width: 300px;
+      height: 400px;
+      margin-right: 100px;
+      margin-top: 150px;
+    }
+
+    .divmid {
+      float: right;
+      width: 320px;
+      border: 1px solid #a0a0de;
+      margin-right: 20px;
+      margin-top: 150px;
+    }
+
+    .divleft{
+      float: right;
+      width: 500px;
+      height: 400px;
+      margin-right: 20px;
+      margin-top: 150px;
+    }
+
+    .text {
+      font-size: 14px;
+    }
+
+    .item {
+      margin-bottom: 18px;
+
+    }
+
+    .clearfix:before,
+    .clearfix:after {
+      display: table;
+      content: "";
+    }
+    .clearfix:after {
+      clear: both
+    }
+
+    .box-card {
+      width: 500px;
+      height: 400px;
+      overflow-x: scroll;
+      overflow-y: scroll;
+    }
+    .box-card2 {
+      width: 200px;
+      height: 400px;
+      overflow-x: scroll;
+      overflow-y: scroll;
+    }
+
+  </style>
+  <link rel="stylesheet" href="./plugins/element-ui/index.css"/>
 </head>
 <body>
 <div class="layui-row" id="app">
-  <h1>客户端</h1>
-  <div class="layui-form-item">
-    <label class="layui-form-label">请输入ID</label>
-    <div class="layui-input-inline" style="width: 300px">
-      <input v-model="username" type="text" name="title" required lay-verify="required" placeholder="请输入ID"
-             autocomplete="off" class="layui-input">
-    </div>
-    <button class="layui-btn" v-on:click="connect()">连接</button>
+  <div class="divright">
+    <el-card class="box-card2">
+      <div slot="header" class="clearfix">
+        <span>在线列表</span>
+        <el-button style="float: right; padding: 3px 0" type="text" v-on:click="clickClear()">刷新</el-button>
+      </div>
+      <div v-for="user in userList" class="text item">
+        <div v-on:click="clickUser">
+          {{user}}
+        </div>
+      </div>
+    </el-card>
   </div>
-  <div class="layui-form-item">
-    <label class="layui-form-label">请输入接收方id</label>
-    <div class="layui-input-inline" style="width: 300px">
-      <input v-model="targetId" type="text" name="title" required lay-verify="required" placeholder="请输入接收方id"
-             autocomplete="off" class="layui-input">
+  <div class="divmid">
+    <h1 style="text-align: center">客户端</h1>
+    <div style="">
+      <div class="demo-input-suffix" style="width: 300px;height: 150px;margin:0px auto; ">
+        ID信息：
+        <el-row>
+          <el-input
+              placeholder="请输入源ID"
+              v-model="username">
+          </el-input>
+          <div style="margin-top: 20px;">
+            <el-button v-on:click="connect()" type="success" :disabled="disabled">连接</el-button>
+          </div>
+        </el-row>
+      </div>
+      <div class="layui-input-inline" style="width: 300px;margin:0px auto;">
+        发送内容
+        <el-input
+            placeholder="请输入目的ID"
+            v-model="target">
+        </el-input>
+        <el-input v-model="message" placeholder="请输入内容"></el-input>
+      </div>
+      <div class="layui-input-inline1" style="width: 300px;margin:10px auto;">
+        <el-row>
+          <el-button v-on:click="sendAsyncMsg" type="success">异步发送</el-button>
+          <el-button v-on:click="sendSyncMsg" type="primary">同步发送</el-button>
+        </el-row>
+      </div>
     </div>
-    <label class="layui-form-label">请发送内容</label>
-    <div class="layui-input-inline" style="width: 300px">
-      <input v-model="message" type="text" name="title" required lay-verify="required" placeholder="请输入要发送的内容"
-             autocomplete="off" class="layui-input">
-    </div>
-    <button class="layui-btn" v-on:click="sendMsg">发送</button>
+  </div>
+  <div class="divleft">
+    <el-card class="box-card">
+      <div slot="header" class="clearfix">
+        <span>消息列表</span>
+        <el-button style="float: right; padding: 3px 0" type="text" v-on:click="clickClear()">清空</el-button>
+      </div>
+      <div v-for="msg in msgList" class="text item">
+        {{msg.user+": "+msg.msg}}
+      </div>
+    </el-card>
   </div>
 </div>
 
 <script src="./plugins/vue/vue.js"></script>
 <script src="./plugins/axios/axios.min.js"></script>
-
+<script src="./plugins/element-ui/index.js"></script>
 <script src="./api/main.js"></script>
 <script src="./js/request.js"></script>
 
@@ -41,29 +132,54 @@
   let app = new Vue({
     el: '#app',
     data: {
+      disabled:false,
       message: "",
-      username:"",
-      targetId:"",
+      username: "",
+      target: "",
+      userList: [],
+      msgList:[]
     },
-    methods:{
-      sendMsg(){
+    methods: {
+      sendSyncMsg() {
         var that = this;
         let msg = {
           text: that.message,
           source: that.username,
-          target: that.targetId,
-          isSync: false
+          target: that.target,
+          response: true
         }
         msg = JSON.stringify(msg);
         console.log(msg)
-        if(ws==null){
+        if (ws == null) {
           alert("客户端未连接");
           return;
         }
-        // sendMsgSyncApi(msg).then((res)=>{
-        //   console.log(res)
-        // })
-        sendMsgSyncApi(msg).then((res)=>{
+        const loading = this.$loading({
+          lock: true,
+          text: 'Loading',
+          spinner: 'el-icon-loading',
+          background: 'rgba(0, 0, 0, 0.7)'
+        });
+        sendMsgSyncApi(msg).then((res) => {
+          console.log(res)
+          loading.close();
+        })
+      },
+      sendAsyncMsg() {
+        var that = this;
+        let msg = {
+          text: that.message,
+          source: that.username,
+          target: that.target,
+          response: false
+        }
+        msg = JSON.stringify(msg);
+        console.log(msg)
+        if (ws == null) {
+          alert("客户端未连接");
+          return;
+        }
+        sendMsgAsyncApi(msg).then((res) => {
           console.log(res)
         })
       },
@@ -71,17 +187,30 @@
         var username = app.username;
         console.log(username)
         var that = this;
-        if (username != null) {
+        if (username != null && username !== "") {
           if ('WebSocket' in window) {
             ws = new WebSocket("ws://localhost:8086/socketServer/" + username);
+            this.disabled = true;
           } else if ('MozWebSocket' in window) {
             ws = new MozWebSocket("ws://localhost:8086/socketServer/" + username);
+            this.disabled = true;
           } else {
             alert("该浏览器不支持websocket");
           }
 
           ws.onmessage = function (evt) {
             console.log(evt.data);
+            let res = JSON.parse(evt.data)
+            if (res.type === 1) {
+              //上下线通知
+              app.userList = res.data;
+              that.$message(res.text);
+            }else{
+              that.msgList.push({
+                user:res.source,
+                msg:res.text
+              })
+            }
           };
 
           ws.onclose = function (evt) {
@@ -89,11 +218,19 @@
 
           ws.onopen = function (evt) {
           };
+
         } else {
           alert("请输入您的Id");
         }
+      },
+      clickUser(e) {
+        app.target = e.currentTarget.innerText;
+      },
+      clickClear(){
+        this.msgList = []
       }
     }
+
   });
 
 

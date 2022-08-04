@@ -1,10 +1,11 @@
 package com.example.demo.entity;
 
+import lombok.Getter;
 import org.springframework.context.ApplicationEvent;
 
 public class MyEvent extends ApplicationEvent {
-
-
+    @Getter
+    private Message message;
     /**
      * 构造器
      *
@@ -13,7 +14,8 @@ public class MyEvent extends ApplicationEvent {
      *
      * @date 2019/11/19 6:40
      */
-    public MyEvent(Object source) {
+    public MyEvent(Object source, Message message) {
         super(source);
+        this.message = message;
     }
 }

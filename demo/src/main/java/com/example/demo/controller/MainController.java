@@ -5,12 +5,11 @@ import com.example.demo.entity.Message;
 import com.example.demo.entity.MyEvent;
 import com.example.demo.server.SocketServer;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.event.EventListener;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpSession;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 @Slf4j
 @CrossOrigin
@@ -18,41 +17,47 @@ import javax.servlet.http.HttpSession;
 @RequestMapping("/index")
 public class MainController {
 
-    @Autowired
-    private SocketServer socketServer;
-    @Autowired
-    private ApplicationContext applicationContext;
+    private CountDownLatch countDownLatch = new CountDownLatch(1);
 
+    private Message message;
 
     @PostMapping("/sendSync")
-    public R<String> sendSyncMessage(@RequestBody Message message, HttpSession session) throws InterruptedException {
-        log.info("同步Message:{};  {}", message.toString(), session);
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(30000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+    public R<Message> sendSyncMessage(@RequestBody Message message) throws InterruptedException {
+        final boolean[] isTimeOut = {false};
+        countDownLatch = new CountDownLatch(1);
+        SocketServer.sendMessage(message);
+        new Thread(() -> {
+            try {
+                Thread.sleep(30000);
+                isTimeOut[0] = true;
+                countDownLatch.countDown();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-
-            @EventListener(classes = {MyEvent.class}) //classes属性指定处理事件的类型
-            public void onEvent(MyEvent event){
-                log.info("事件触发");
-                Thread.currentThread().interrupt();
-            }
-        });
-        thread.start();
-        thread.join();
-        return R.success("success");
+        }).start();
+        countDownLatch.await();
+        return !isTimeOut[0] ? R.success(this.message) : R.error("timeout");
 
     }
 
     @PostMapping("/sendAsync")
-    public R<String> sendAsyncMessage(@RequestBody Message message){
+    public R<String> sendAsyncMessage(@RequestBody Message message) {
         log.info("Message:{}", message.toString());
-//        SocketServer.se
+        SocketServer.sendMessage(message);
         return R.success("");
+    }
+
+    @GetMapping("/getUsers")
+    public R<List<String>> getUsersList() {
+        List<String> onlineUsers = SocketServer.getOnlineUsers();
+        return R.success(onlineUsers);
+    }
+
+    @EventListener({MyEvent.class})
+    public void onEvent(MyEvent event) {
+        Message message = event.getMessage();
+        log.info("同步回复：{}", message);
+        this.message = message;
+        countDownLatch.countDown();
     }
 }
