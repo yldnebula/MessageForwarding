@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+<head>
+  <meta charset="UTF-8"/>
+  <title>客户端</title>
+</head>
+<body>
+<div class="layui-row" id="app">
+  <h1>客户端</h1>
+  <div class="layui-form-item">
+    <label class="layui-form-label">请输入ID</label>
+    <div class="layui-input-inline" style="width: 300px">
+      <input v-model="username" type="text" name="title" required lay-verify="required" placeholder="请输入ID"
+             autocomplete="off" class="layui-input">
+    </div>
+    <button class="layui-btn" v-on:click="connect()">连接</button>
+  </div>
+  <div class="layui-form-item">
+    <label class="layui-form-label">请输入接收方id</label>
+    <div class="layui-input-inline" style="width: 300px">
+      <input v-model="targetId" type="text" name="title" required lay-verify="required" placeholder="请输入接收方id"
+             autocomplete="off" class="layui-input">
+    </div>
+    <label class="layui-form-label">请发送内容</label>
+    <div class="layui-input-inline" style="width: 300px">
+      <input v-model="message" type="text" name="title" required lay-verify="required" placeholder="请输入要发送的内容"
+             autocomplete="off" class="layui-input">
+    </div>
+    <button class="layui-btn" v-on:click="sendMsg">发送</button>
+  </div>
+</div>
+
+<script src="./plugins/vue/vue.js"></script>
+<script src="./plugins/axios/axios.min.js"></script>
+
+<script src="./api/main.js"></script>
+<script src="./js/request.js"></script>
+
+<script type="text/javascript">
+  let ws = null;
+  let app = new Vue({
+    el: '#app',
+    data: {
+      message: "",
+      username:"",
+      targetId:"",
+    },
+    methods:{
+      sendMsg(){
+        var that = this;
+        let msg = {
+          text: that.message,
+          source: that.username,
+          target: that.targetId,
+          isSync: false
+        }
+        msg = JSON.stringify(msg);
+        console.log(msg)
+        if(ws==null){
+          alert("客户端未连接");
+          return;
+        }
+        // sendMsgSyncApi(msg).then((res)=>{
+        //   console.log(res)
+        // })
+        sendMsgSyncApi(msg).then((res)=>{
+          console.log(res)
+        })
+      },
+      connect() {
+        var username = app.username;
+        console.log(username)
+        var that = this;
+        if (username != null) {
+          if ('WebSocket' in window) {
+            ws = new WebSocket("ws://localhost:8086/socketServer/" + username);
+          } else if ('MozWebSocket' in window) {
+            ws = new MozWebSocket("ws://localhost:8086/socketServer/" + username);
+          } else {
+            alert("该浏览器不支持websocket");
+          }
+
+          ws.onmessage = function (evt) {
+            console.log(evt.data);
+          };
+
+          ws.onclose = function (evt) {
+          };
+
+          ws.onopen = function (evt) {
+          };
+        } else {
+          alert("请输入您的Id");
+        }
+      }
+    }
+  });
+
+
+</script>
+</body>
+</html>
