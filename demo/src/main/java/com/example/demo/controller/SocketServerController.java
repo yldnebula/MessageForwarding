@@ -1,13 +1,11 @@
-package com.example.demo.server;
+package com.example.demo.controller;
 
 import com.alibaba.fastjson.JSON;
-import com.example.demo.entity.Message;
-import com.example.demo.entity.MyEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.example.demo.common.Message;
+import com.example.demo.Event.MessageEvent;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.stereotype.Component;
 
 import javax.websocket.*;
@@ -20,17 +18,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @ServerEndpoint(value = "/socketServer/{userId}")
 @Component
-public class SocketServer {
-
-    private static final Logger logger = LoggerFactory.getLogger(SocketServer.class);
-
-    private static ConcurrentHashMap<String, Session> sessionMap = new ConcurrentHashMap<>();
-//    private static ConcurrentHashMap<String, Session> sessionMap = new ConcurrentHashMap<>();
+@Slf4j
+public class SocketServerController {
+    private static final ConcurrentHashMap<String, Session> sessionMap = new ConcurrentHashMap<>();
     private Session session;
-
     private static final String SYS_ID = "SERVER";
     private static final String ALL_ID = "ALL";
-
     private static ApplicationContext applicationContext;
 
     @Autowired
@@ -41,7 +34,7 @@ public class SocketServer {
     public void open(Session session, @PathParam(value = "userId") String userName) {
         this.session = session;
         sessionMap.put(userName, session);
-        logger.info("客户端:【{}】连接成功", userName);
+        log.info("客户端:【{}】连接成功", userName);
         //群发通知
         sendMessage(new Message<>(SYS_ID, ALL_ID, "客户端【"+userName+"】已上线！",1, getOnlineUsers()));
     }
@@ -58,12 +51,12 @@ public class SocketServer {
         String target = mess.getTarget();
 
         if(mess.getResponse()){
-            applicationContext.publishEvent(new MyEvent(this, mess));
+            applicationContext.publishEvent(new MessageEvent(this, mess));
         }else{
-            logger.info("客户端:【{}】发送信息:{} 给客户端【{}】", source, text, target);
+            log.info("客户端:【{}】发送信息:{} 给客户端【{}】", source, text, target);
             Session t_sess = sessionMap.get(target);
             if (t_sess == null) {
-                logger.info("发送信息失败，【{}】未上线", target);
+                log.info("发送信息失败，【{}】未上线", target);
             } else {
                 sendMessage(mess);
             }
@@ -79,12 +72,11 @@ public class SocketServer {
         String username = "";
         for (Map.Entry<String, Session> entry : sessionMap.entrySet()) {
             if (entry.getValue().getId().equals(session.getId())) {
-                logger.info("客户端:【{}】关闭连接", entry.getKey());
+                log.info("客户端:【{}】关闭连接", entry.getKey());
                 username = entry.getKey();
                 sessionMap.remove(entry.getKey());
             }
         }
-        //群发通知
         sendMessage(new Message<>(SYS_ID, ALL_ID, "客户端【"+username+"】下线！", 1, getOnlineUsers()));
 
     }
@@ -99,13 +91,12 @@ public class SocketServer {
         String username = "";
         for (Map.Entry<String, Session> entry : sessionMap.entrySet()) {
             if (entry.getValue().getId().equals(session.getId())) {
-                logger.info("客户端:【{}】发生异常，下线", entry.getKey());
+                log.info("客户端:【{}】发生异常，下线", entry.getKey());
                 username = entry.getKey();
                 sessionMap.remove(entry.getKey());
                 error.printStackTrace();
             }
         }
-        //群发通知
         sendMessage(new Message<>(SYS_ID, ALL_ID, "客户端【" + username + "】下线！", 1, getOnlineUsers()));
     }
 
@@ -122,11 +113,11 @@ public class SocketServer {
             for (Session session : sessionMap.values()) {
                 session.getAsyncRemote().sendText(JSON.toJSONString(message));
             }
-            logger.info("推送给所有客户端 :【{}】", message.getText());
+            log.info("推送给所有客户端 :【{}】", message.getText());
         }else{
             Session targetSession = sessionMap.get(target);
             targetSession.getAsyncRemote().sendText(JSON.toJSONString(message));
-            logger.info("消息发送成功！");
+            log.info("消息发送成功！");
         }
     }
 

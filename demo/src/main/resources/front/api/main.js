@@ -14,3 +14,10 @@ function sendMsgAsyncApi(data){
     })
 }
 
+function getOnlineUser(){
+    return $axios({
+        'url':'/index/users',
+        'method':'get',
+    })
+}
+

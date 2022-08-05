@@ -51,7 +51,7 @@
         <span>在线列表</span>
       </div>
       <el-button style="float: right; padding: 3px 0;margin-right: 20px;margin-top: 10px" type="text"
-                 v-on:click="clickClear()">刷新
+                 v-on:click="freshUsers()">刷新
       </el-button>
     </div>
     <el-scrollbar class="box" style="height: 350px;width: 300px;">
@@ -268,8 +268,18 @@
       clickClear() {
         this.msgList = []
       },
-      load() {
-        this.count += 2
+      freshUsers(){
+        getOnlineUser().then((res) => {
+          res = res.data;
+          if(res.code===1){
+            this.userList = res.data;
+          }else{
+            this.$notify.error({
+              title: '错误',
+              message: '刷新失败'
+            });
+          }
+        })
       }
     }
 
