@@ -20,6 +20,8 @@ public class Message<T> implements Serializable {
 
     private T data;
 
+    private Boolean sync = false;
+
     private Boolean response=false;
 
     public Message(String source, String target, String text){

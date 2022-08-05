@@ -44,7 +44,7 @@ public class MainController {
     public R<String> sendAsyncMessage(@RequestBody Message message) {
         log.info("Message:{}", message.toString());
         SocketServer.sendMessage(message);
-        return R.success("");
+        return R.success("success");
     }
 
     @GetMapping("/getUsers")

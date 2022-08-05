@@ -15,12 +15,11 @@
     .divmid {
       float: right;
       width: 320px;
-      border: 1px solid #a0a0de;
       margin-right: 20px;
-      margin-top: 150px;
+      margin-top: 125px;
     }
 
-    .divleft{
+    .divleft {
       float: right;
       width: 500px;
       height: 400px;
@@ -34,29 +33,11 @@
 
     .item {
       margin-bottom: 18px;
-
+      margin-right: 10px;
     }
 
-    .clearfix:before,
-    .clearfix:after {
-      display: table;
-      content: "";
-    }
-    .clearfix:after {
-      clear: both
-    }
-
-    .box-card {
-      width: 500px;
-      height: 400px;
-      overflow-x: scroll;
-      overflow-y: scroll;
-    }
-    .box-card2 {
-      width: 200px;
-      height: 400px;
-      overflow-x: scroll;
-      overflow-y: scroll;
+    .box {
+      box-shadow: 0 2px 4px rgba(0, 0, 0, .12), 0 0 6px rgba(0, 0, 0, .04);
     }
 
   </style>
@@ -65,42 +46,50 @@
 <body>
 <div class="layui-row" id="app">
   <div class="divright">
-    <el-card class="box-card2">
-      <div slot="header" class="clearfix">
+    <div slot="header" class="box" style="height: 45px;">
+      <div style="width:100px;margin-top: 10px;margin-right: 20px; float: left;padding: 0px 20px;">
         <span>在线列表</span>
-        <el-button style="float: right; padding: 3px 0" type="text" v-on:click="clickClear()">刷新</el-button>
       </div>
-      <div v-for="user in userList" class="text item">
-        <div v-on:click="clickUser">
-          {{user}}
-        </div>
+      <el-button style="float: right; padding: 3px 0;margin-right: 20px;margin-top: 10px" type="text"
+                 v-on:click="clickClear()">刷新
+      </el-button>
+    </div>
+    <el-scrollbar class="box" style="height: 350px;width: 300px;">
+      <!-- 具体要包裹的内容 -->
+      <div style="
+		    width: 300px;
+		    text-align: left;
+		">
+        <div v-for="usr in userList">
+          <div class="text item" v-on:click="clickUser"> {{ usr }}</div>
       </div>
-    </el-card>
+      </div>
+    </el-scrollbar>
   </div>
   <div class="divmid">
-    <h1 style="text-align: center">客户端</h1>
-    <div style="">
-      <div class="demo-input-suffix" style="width: 300px;height: 150px;margin:0px auto; ">
+    <div class="box" style="width: 300px; height: 400px">
+      <h1 style="text-align: center">客户端</h1>
+      <div class="demo-input-suffix" style="width: 210px;height: 150px; margin-left: 40px; ">
         ID信息：
         <el-row>
           <el-input
               placeholder="请输入源ID"
               v-model="username">
           </el-input>
-          <div style="margin-top: 20px;">
+          <div style="margin-top: 20px;margin-left: 75px;">
             <el-button v-on:click="connect()" type="success" :disabled="disabled">连接</el-button>
           </div>
         </el-row>
       </div>
-      <div class="layui-input-inline" style="width: 300px;margin:0px auto;">
+      <div class="layui-input-inline" style="width: 210px;margin-left: 40px; margin-top: 10px">
         发送内容
-        <el-input
+        <el-input style="padding-bottom: 5px"
             placeholder="请输入目的ID"
             v-model="target">
         </el-input>
         <el-input v-model="message" placeholder="请输入内容"></el-input>
       </div>
-      <div class="layui-input-inline1" style="width: 300px;margin:10px auto;">
+      <div class="layui-input-inline1" style="width: 300px;margin-left: 40px; margin-top: 20px">
         <el-row>
           <el-button v-on:click="sendAsyncMsg" type="success">异步发送</el-button>
           <el-button v-on:click="sendSyncMsg" type="primary">同步发送</el-button>
@@ -109,15 +98,23 @@
     </div>
   </div>
   <div class="divleft">
-    <el-card class="box-card">
-      <div slot="header" class="clearfix">
+    <div slot="header" class="box" style="width: 100%;height: 45px;">
+      <div style=" width:100px;float: left;margin-left: 20px; padding: 12px 0px;">
         <span>消息列表</span>
-        <el-button style="float: right; padding: 3px 0" type="text" v-on:click="clickClear()">清空</el-button>
       </div>
-      <div v-for="msg in msgList" class="text item">
-        {{msg.user+": "+msg.msg}}
+      <el-button style="float: right;margin-right: 20px;" type="text" v-on:click="clickClear()">清空</el-button>
+    </div>
+    <el-scrollbar class="box" style="height: 350px;width: 500px;">
+      <!-- 具体要包裹的内容 -->
+      <div style="
+		    width: 500px;
+		    text-align: left;
+		">
+        <ul v-for="msg in msgList">
+          <li class="text item"> {{ msg.user + ": " + msg.msg }}</li>
+        </ul>
       </div>
-    </el-card>
+    </el-scrollbar>
   </div>
 </div>
 
@@ -132,12 +129,12 @@
   let app = new Vue({
     el: '#app',
     data: {
-      disabled:false,
+      disabled: false,
       message: "",
       username: "",
       target: "",
       userList: [],
-      msgList:[]
+      msgList: []
     },
     methods: {
       sendSyncMsg() {
@@ -146,7 +143,8 @@
           text: that.message,
           source: that.username,
           target: that.target,
-          response: true
+          sync: true,
+          response: false
         }
         msg = JSON.stringify(msg);
         console.log(msg)
@@ -163,6 +161,22 @@
         sendMsgSyncApi(msg).then((res) => {
           console.log(res)
           loading.close();
+          res = res.data.data
+          if (res.msg === "timeout") {
+            that.$notify.error({
+              title: '错误',
+              message: '对方回复超时'
+            });
+          } else {
+            that.$message({
+              message: '收到回复',
+              type: 'success'
+            });
+            that.msgList.push({
+              user: res.source,
+              msg: res.text
+            })
+          }
         })
       },
       sendAsyncMsg() {
@@ -171,6 +185,7 @@
           text: that.message,
           source: that.username,
           target: that.target,
+          sync: false,
           response: false
         }
         msg = JSON.stringify(msg);
@@ -183,6 +198,7 @@
           console.log(res)
         })
       },
+
       connect() {
         var username = app.username;
         console.log(username)
@@ -204,12 +220,35 @@
             if (res.type === 1) {
               //上下线通知
               app.userList = res.data;
-              that.$message(res.text);
-            }else{
+              that.$message({
+                type: 'success',
+                message: res.text
+              });
+            } else {
               that.msgList.push({
-                user:res.source,
-                msg:res.text
+                user: res.source,
+                msg: res.text
               })
+
+              if (res.sync === true) {
+                let name = res.source;
+                that.$prompt('请您回复', '来自' + name + '的同步消息:' + res.text, {
+                  confirmButtonText: '确定',
+                  cancelButtonText: '取消',
+                }).then(({value}) => {
+                  let msg = res;
+                  msg.response = true;
+                  let source = msg.source;
+                  msg.source = msg.target;
+                  msg.target = source;
+                  msg.text = value;
+                  ws.send(JSON.stringify(msg))
+                  that.$message({
+                    type: 'success',
+                    message: '回复成功'
+                  });
+                })
+              }
             }
           };
 
@@ -226,8 +265,11 @@
       clickUser(e) {
         app.target = e.currentTarget.innerText;
       },
-      clickClear(){
+      clickClear() {
         this.msgList = []
+      },
+      load() {
+        this.count += 2
       }
     }
 
