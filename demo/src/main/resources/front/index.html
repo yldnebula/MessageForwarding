@@ -153,6 +153,13 @@
           alert("客户端未连接");
           return;
         }
+        if(that.userList.indexOf(that.target)===-1){
+          that.$notify.error({
+            title: '错误',
+            message: '用户未上线'
+          });
+          return;
+        }
         const loading = this.$loading({
           lock: true,
           text: 'Loading',
@@ -201,74 +208,17 @@
           alert("客户端未连接");
           return;
         }
+        if(that.userList.indexOf(that.target)===-1){
+          that.$notify.error({
+            title: '错误',
+            message: '用户未上线'
+          });
+          return;
+        }
         sendMsgAsyncApi(msg).then((res) => {
           console.log(res)
         })
       },
-
-      // connect() {
-      //   var username = app.username;
-      //   console.log(username)
-      //   var that = this;
-      //   if (username != null && username !== "") {
-      //     if ('WebSocket' in window) {
-      //       ws = new WebSocket("ws://localhost:8086/socketServer/" + username);
-      //       this.disabled = true;
-      //     } else if ('MozWebSocket' in window) {
-      //       ws = new MozWebSocket("ws://localhost:8086/socketServer/" + username);
-      //       this.disabled = true;
-      //     } else {
-      //       alert("该浏览器不支持websocket");
-      //     }
-      //
-      //     ws.onmessage = function (evt) {
-      //       console.log(evt.data);
-      //       let res = JSON.parse(evt.data)
-      //       if (res.type === 1) {
-      //         //上下线通知
-      //         app.userList = res.data;
-      //         that.$message({
-      //           type: 'success',
-      //           message: res.text
-      //         });
-      //       } else {
-      //         that.msgList.push({
-      //           user: res.source,
-      //           msg: res.text
-      //         })
-      //
-      //         if (res.sync === true) {
-      //           let name = res.source;
-      //           that.$prompt('请您回复', '来自' + name + '的同步消息:' + res.text, {
-      //             confirmButtonText: '确定',
-      //             cancelButtonText: '取消',
-      //           }).then(({value}) => {
-      //             let msg = res;
-      //             msg.response = true;
-      //             let source = msg.source;
-      //             msg.source = msg.target;
-      //             msg.target = source;
-      //             msg.text = value;
-      //             ws.send(JSON.stringify(msg))
-      //             that.$message({
-      //               type: 'success',
-      //               message: '回复成功'
-      //             });
-      //           })
-      //         }
-      //       }
-      //     };
-      //
-      //     ws.onclose = function (evt) {
-      //     };
-      //
-      //     ws.onopen = function (evt) {
-      //     };
-      //
-      //   } else {
-      //     alert("请输入您的Id");
-      //   }
-      // },
       clickConnect(){
         let that = this;
         connect(this.username, function (websocket){
