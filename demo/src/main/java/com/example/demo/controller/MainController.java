@@ -14,12 +14,17 @@ import java.util.List;
 @RestController
 @RequestMapping("/index")
 public class MainController {
-    @Autowired
     private MainService mainService;
+
+    @Autowired
+    public void setMainService(MainService mainService) {
+        this.mainService = mainService;
+    }
+
     @PostMapping("/sendSync")
-    public R sendSyncMessage(@RequestBody Message message) throws InterruptedException {
+    public R sendSyncMessage(@RequestBody Message message) {
         Message resultMsg = mainService.sendSyncMessage(message);
-        return resultMsg!=null ? R.success(resultMsg) : R.error("timeout");
+        return resultMsg != null ? R.success(resultMsg) : R.error("timeout");
     }
 
     @PostMapping("/sendAsync")

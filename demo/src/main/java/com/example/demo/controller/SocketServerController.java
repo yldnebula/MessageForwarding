@@ -21,13 +21,15 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class SocketServerController {
     private static final ConcurrentHashMap<String, Session> sessionMap = new ConcurrentHashMap<>();
+    private static final String PING_STR = "0x9";
+    private static final String PONG_STR = "0xA";
     private Session session;
     private static final String SYS_ID = "SERVER";
     private static final String ALL_ID = "ALL";
     private static ApplicationContext applicationContext;
 
     @Autowired
-    public void setChatRecodeService(ApplicationContext appContext) {
+    public void setApplicationContext(ApplicationContext appContext) {
         applicationContext= appContext;
     }
     @OnOpen
@@ -49,6 +51,12 @@ public class SocketServerController {
         String text = mess.getText();
         String source = mess.getSource();
         String target = mess.getTarget();
+
+        if(text.equals(PING_STR)){
+            //收到心跳包
+            sendMessage(new Message<>(SYS_ID, source, PONG_STR, 3));
+            return;
+        }
 
         if(mess.getResponse()){
             applicationContext.publishEvent(new MessageEvent(this, mess));
