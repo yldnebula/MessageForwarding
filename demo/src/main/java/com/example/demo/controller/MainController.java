@@ -21,7 +21,7 @@ public class MainController {
         this.mainService = mainService;
     }
 
-    @PostMapping("/sendSync")
+    @PostMapping("/sendSync")//前端请求传Json对象则后端使用@RequestParam；前端请求传Json对象的字符串则后端使用@RequestBody。
     public R sendSyncMessage(@RequestBody Message message) {
         Message resultMsg = mainService.sendSyncMessage(message);
         return resultMsg != null ? R.success(resultMsg) : R.error("timeout");
