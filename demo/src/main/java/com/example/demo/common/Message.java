@@ -14,7 +14,7 @@ import java.util.List;
 public class Message<T> implements Serializable {
     private static final long serialVersionUID = 1L;
     private Integer id;
-    private Integer type = 0;//0:普通消息，1:上下线通知, 2:错误消息, 3:心跳包
+    private Integer type = 0;//0:普通消息，1:心跳包, 2:错误消息, 3:上线通知, 4:下线通知
     private String source;
     private String target;
     private String text;

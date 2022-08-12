@@ -38,13 +38,13 @@ public class MainServiceImpl implements MainService {
         message.setId(id);
         requestMap.put(id, new AbstractMap.SimpleEntry<>(countDownLatch, null));
         SocketServerController.sendMessage(message);
-        new Thread(() -> {
-            try {
-                Thread.sleep(31000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }).start();
+//        new Thread(() -> {
+//            try {
+//                Thread.sleep(31000);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+//        }).start();
         boolean await = false;
         try {
             await = countDownLatch.await(30, TimeUnit.SECONDS);

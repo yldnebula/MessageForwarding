@@ -38,7 +38,7 @@ public class SocketServerController {
         sessionMap.put(userName, session);
         log.info("客户端:【{}】连接成功", userName);
         //群发通知
-        sendMessage(new Message<>(SYS_ID, ALL_ID, "客户端【"+userName+"】已上线！",1, getOnlineUsers()));
+        sendMessage(new Message<>(SYS_ID, ALL_ID, "客户端【"+userName+"】已上线！",3, getOnlineUsers()));
     }
 
     /**
@@ -54,7 +54,7 @@ public class SocketServerController {
 
         if(text.equals(PING_STR)){
             //收到心跳包
-            sendMessage(new Message<>(SYS_ID, source, PONG_STR, 3));
+            sendMessage(new Message<>(SYS_ID, source, PONG_STR, 1));
             return;
         }
 
@@ -77,7 +77,7 @@ public class SocketServerController {
      */
     @OnClose
     public void onClose() {
-        String username = "";
+        String username = null;
         for (Map.Entry<String, Session> entry : sessionMap.entrySet()) {
             if (entry.getValue().getId().equals(session.getId())) {
                 log.info("客户端:【{}】关闭连接", entry.getKey());
@@ -85,7 +85,9 @@ public class SocketServerController {
                 sessionMap.remove(entry.getKey());
             }
         }
-        sendMessage(new Message<>(SYS_ID, ALL_ID, "客户端【"+username+"】下线！", 1, getOnlineUsers()));
+        if(username!=null){
+            sendMessage(new Message<>(SYS_ID, ALL_ID, "客户端【"+username+"】下线！", 4, getOnlineUsers()));
+        }
 
     }
 
@@ -96,7 +98,7 @@ public class SocketServerController {
      */
     @OnError
     public void onError(Throwable error) {
-        String username = "";
+        String username = null;
         for (Map.Entry<String, Session> entry : sessionMap.entrySet()) {
             if (entry.getValue().getId().equals(session.getId())) {
                 log.info("客户端:【{}】发生异常，下线", entry.getKey());
@@ -105,7 +107,9 @@ public class SocketServerController {
                 error.printStackTrace();
             }
         }
-        sendMessage(new Message<>(SYS_ID, ALL_ID, "客户端【" + username + "】下线！", 1, getOnlineUsers()));
+        if(username!=null){
+            sendMessage(new Message<>(SYS_ID, ALL_ID, "客户端【" + username + "】下线！", 4, getOnlineUsers()));
+        }
     }
 
 
@@ -119,13 +123,19 @@ public class SocketServerController {
         String target = message.getTarget();
         if(target.equals(ALL_ID)){
             for (Session session : sessionMap.values()) {
-                session.getAsyncRemote().sendText(JSON.toJSONString(message));
+                if(session.isOpen()){
+                    session.getAsyncRemote().sendText(JSON.toJSONString(message));
+                }
             }
             log.info("推送给所有客户端 :【{}】", message.getText());
         }else{
             Session targetSession = sessionMap.get(target);
-            targetSession.getAsyncRemote().sendText(JSON.toJSONString(message));
-            log.info("消息发送成功！");
+            if(targetSession.isOpen()){
+                targetSession.getAsyncRemote().sendText(JSON.toJSONString(message));
+                log.info("消息发送成功！");
+            }else{
+                log.info("客户端【{}】连接已关闭",target);
+            }
         }
     }
 
