@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?><configuration>
+
+    <springProperty scope="context" name="logPath" source="logback.logPath"/>
+
+    <!-- 定义文件输出格式, 编码方式, 输出文件的路径 -->
+
+    <property name="pattern"
+
+              value="[%date{yyyy-MM-dd HH:mm:ss.SSS}] %X{logthreadId} %-5level %logger{80} %method %line - %msg%n"/>
+
+    <property name="charsetEncoding" value="UTF-8"/>
+    <property name="LOG_HOME" value="${logPath}"/>
+
+
+    <!-- CONSOLG 控制台日志-->
+
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+
+        <encoder>
+
+            <pattern>${pattern}</pattern>
+
+            <charset>${charsetEncoding}</charset>
+
+        </encoder>
+
+    </appender>
+
+
+
+    <!-- INFO 输出到文件 -->
+
+    <appender name="infoLog" class="ch.qos.logback.core.rolling.RollingFileAppender">
+
+        <append>true</append>
+
+        <encoder>
+
+            <pattern>${pattern}</pattern>
+
+            <charset>${charsetEncoding}</charset>
+
+        </encoder>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+
+            <fileNamePattern>
+
+                ${LOG_HOME}${file.separator}%d{yyyy-MM-dd}${file.separator}info${file.separator}service-INFO-%d{yyyy-MM-dd}.%i.log
+
+            </fileNamePattern>
+
+            <maxHistory>30</maxHistory>
+
+            <maxFileSize>10KB</maxFileSize>
+
+        </rollingPolicy>
+
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+
+            <!-- 设置日志输出级别 -->
+
+            <level>INFO</level>
+
+        </filter>
+
+    </appender>
+
+
+
+    <!-- WARN 输出到文件 -->
+
+    <appender name="warnLog" class="ch.qos.logback.core.rolling.RollingFileAppender">
+
+        <append>true</append>
+
+        <encoder>
+
+            <pattern>${pattern}</pattern>
+
+            <charset>${charsetEncoding}</charset>
+
+        </encoder>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+
+            <fileNamePattern>
+
+                ${LOG_HOME}${file.separator}%d{yyyy-MM-dd}${file.separator}warn${file.separator}service-WARN-%d{yyyy-MM-dd}.%i.log
+
+            </fileNamePattern>
+
+            <maxHistory>30</maxHistory>
+
+            <maxFileSize>10MB</maxFileSize>
+
+        </rollingPolicy>
+
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+
+            <!-- 设置日志输出级别 -->
+
+            <level>WARN</level>
+
+        </filter>
+
+    </appender>
+
+
+
+    <!-- ERROR 输出到文件 -->
+
+    <appender name="errorLog" class="ch.qos.logback.core.rolling.RollingFileAppender">
+
+        <append>true</append>
+
+        <encoder>
+
+            <pattern>${pattern}</pattern>
+
+            <charset>${charsetEncoding}</charset>
+
+        </encoder>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+
+            <fileNamePattern>
+
+                ${LOG_HOME}${file.separator}%d{yyyy-MM-dd}${file.separator}error${file.separator}service-ERROR-%d{yyyy-MM-dd}.%i.log
+
+            </fileNamePattern>
+
+            <maxHistory>30</maxHistory>
+
+            <maxFileSize>10MB</maxFileSize>
+
+        </rollingPolicy>
+
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+
+            <!-- 设置日志输出级别 -->
+
+            <level>ERROR</level>
+
+        </filter>
+
+    </appender>
+
+
+
+    <!--配置日志输出的级别-->
+
+    <root level="INFO">
+
+        <appender-ref ref="console"/>
+
+        <appender-ref ref="infoLog"/>
+
+        <appender-ref ref="warnLog"/>
+
+        <appender-ref ref="errorLog"/>
+
+    </root></configuration>

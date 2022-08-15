@@ -1,2 +1,7 @@
 server:
   port: 8086
+logging:
+  config: classpath:logback-spring.xml
+logback:
+  logPath: /Users/edy/Desktop/log/
+
