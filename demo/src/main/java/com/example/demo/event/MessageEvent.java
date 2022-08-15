@@ -1,4 +1,4 @@
-package com.example.demo.Event;
+package com.example.demo.event;
 
 import com.example.demo.common.Message;
 import lombok.Getter;

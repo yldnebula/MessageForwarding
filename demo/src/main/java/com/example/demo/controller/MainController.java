@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.annotation.LimitRequest;
 import com.example.demo.common.R;
 import com.example.demo.common.Message;
 import com.example.demo.service.MainService;
@@ -29,6 +30,19 @@ public class MainController {
 
     @PostMapping("/sendAsync")
     public R<String> sendAsyncMessage(@RequestBody Message message) {
+        mainService.sendAsyncMessage(message);
+        return R.success("success");
+    }
+    @LimitRequest(time = 1000, count = 1)
+    @PostMapping("/sendSyncLimit")//前端请求传Json对象则后端使用@RequestParam；前端请求传Json对象的字符串则后端使用@RequestBody。
+    public R sendSyncMessageLimit(@RequestBody Message message) {
+        Message resultMsg = mainService.sendSyncMessage(message);
+        return resultMsg != null ? R.success(resultMsg) : R.error("timeout");
+    }
+
+    @PostMapping("/sendAsyncLimit")
+    @LimitRequest(time = 1000, count = 1)
+    public R<String> sendAsyncMessageLimit(@RequestBody Message message) {
         mainService.sendAsyncMessage(message);
         return R.success("success");
     }
