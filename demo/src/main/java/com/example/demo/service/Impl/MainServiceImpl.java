@@ -3,8 +3,8 @@ package com.example.demo.service.Impl;
 import com.example.demo.common.Message;
 import com.example.demo.event.MessageEvent;
 import com.example.demo.common.SnowflakeIdWorker;
-import com.example.demo.controller.SocketServerController;
 import com.example.demo.service.MainService;
+import com.example.demo.service.SocketServerService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
@@ -20,13 +20,16 @@ import java.util.concurrent.TimeUnit;
 @Service
 @Slf4j
 public class MainServiceImpl implements MainService {
-//    private static final ConcurrentHashMap<Map.Entry<String, String>, Map.Entry<CountDownLatch, Message>> requestMap = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Integer, Map.Entry<CountDownLatch, Message>> requestMap = new ConcurrentHashMap<>();
-
+    private SocketServerService socketServerService;
     private static SnowflakeIdWorker snowflakeIdWorker;
     @Autowired
     public void setSnowflakeIdWorker(SnowflakeIdWorker worker){
         snowflakeIdWorker = worker;
+    }
+    @Autowired
+    public void setSocketServerService(SocketServerService serverService){
+        socketServerService = serverService;
     }
     @Override
     public Message sendSyncMessage(Message message) {
@@ -36,14 +39,7 @@ public class MainServiceImpl implements MainService {
         int id = snowflakeIdWorker.nextId();
         message.setId(id);
         requestMap.put(id, new AbstractMap.SimpleEntry<>(countDownLatch, null));
-        SocketServerController.sendMessage(message);
-//        new Thread(() -> {
-//            try {
-//                Thread.sleep(31000);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-//        }).start();
+        socketServerService.sendMessage(message);
         boolean await = false;
         try {
             await = countDownLatch.await(30, TimeUnit.SECONDS);
@@ -57,12 +53,12 @@ public class MainServiceImpl implements MainService {
 
     @Override
     public void sendAsyncMessage(Message message) {
-        SocketServerController.sendMessage(message);
+        socketServerService.sendMessage(message);
     }
 
     @Override
     public List<String> getUsersList() {
-        return SocketServerController.getOnlineUsers();
+        return socketServerService.getOnlineUsers();
     }
 
     @EventListener({MessageEvent.class})
