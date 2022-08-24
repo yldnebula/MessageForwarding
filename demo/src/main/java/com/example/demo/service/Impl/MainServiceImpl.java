@@ -53,7 +53,12 @@ public class MainServiceImpl implements MainService {
 
     @Override
     public void sendAsyncMessage(Message message) {
-        socketServerService.sendMessage(message);
+        Integer type = message.getType();
+        if(type==5){
+            socketServerService.sendMessageLock(message);
+        }else{
+            socketServerService.sendMessage(message);
+        }
     }
 
     @Override

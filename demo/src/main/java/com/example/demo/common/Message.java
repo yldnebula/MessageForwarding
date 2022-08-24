@@ -14,7 +14,7 @@ import java.util.List;
 public class Message<T> implements Serializable {
     private static final long serialVersionUID = 1L;
     private Integer id;
-    private Integer type = 0;//0:普通消息，1:心跳包, 2:错误消息, 3:上线通知, 4:下线通知
+    private Integer type = 0;//0:普通消息，1:心跳包, 2:错误消息, 3:上线通知, 4:下线通知, 5.图片消息
     private String source;
     private String target;
     private String text;
@@ -23,6 +23,8 @@ public class Message<T> implements Serializable {
     private Boolean sync = false;
 
     private Boolean response=false;
+
+    private Boolean mock = false;//是否测试消息
 
     public Message(String source, String target, String text){
         this.source = source;
