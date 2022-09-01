@@ -1,39 +1,33 @@
 package com.example.demo.service.Impl;
 
 import com.alibaba.fastjson.JSON;
+import com.example.demo.common.Dict;
+import com.example.demo.common.HeartBeatMap;
 import com.example.demo.common.Message;
 import com.example.demo.event.MessageEvent;
 import com.example.demo.service.SocketServerService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tomcat.websocket.WsSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
-import org.springframework.core.annotation.Order;
+import org.springframework.scheduling.annotation.*;
 import org.springframework.stereotype.Service;
 
 import javax.websocket.Session;
-import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+
 @Service
+@EnableScheduling
 @Slf4j
 public class SocketServerServiceImpl implements SocketServerService {
-    private static final String PING_STR = "0x9";
-    private static final String PONG_STR = "0xA";
-    private static final String SYS_ID = "SERVER";
-    private static final String ALL_ID = "ALL";
-    private final ConcurrentHashMap<String, Session> sessionMap = new ConcurrentHashMap<>();
 
-//    private static final ConcurrentHashMap<String, Object> sessionMap1 = new ConcurrentHashMap<>();
-//
-//    static {
-//        for(int i = 0; i < 500; i++){
-//            sessionMap1.put(String.valueOf(i), new Object());
-//        }
-//    }
+    private final ConcurrentHashMap<String, Session> sessionMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, HeartBeatMap> timeCountMap = new ConcurrentHashMap<>();
+
     private ApplicationContext applicationContext;
 
     @Autowired
@@ -44,8 +38,9 @@ public class SocketServerServiceImpl implements SocketServerService {
     @Override
     public void doOpen(Session session, String userName) {
         sessionMap.put(userName, session);
+        timeCountMap.put(userName, new HeartBeatMap(LocalDateTime.now(), 0));
         log.info("客户端:【{}】连接成功", userName);
-        sendMessage(new Message<>(SYS_ID, ALL_ID, "客户端【" + userName + "】已上线！", 3, getOnlineUsers()));
+        sendMessage(new Message<>(Dict.SYS_ID, Dict.ALL_ID, "客户端【" + userName + "】已上线！", 3, getOnlineUsers()));
     }
 
     @Override
@@ -56,10 +51,11 @@ public class SocketServerServiceImpl implements SocketServerService {
                 log.info("客户端:【{}】关闭连接", entry.getKey());
                 username = entry.getKey();
                 sessionMap.remove(entry.getKey());
+                timeCountMap.remove(username);
             }
         }
         if (username != null) {
-            sendMessage(new Message<>(SYS_ID, ALL_ID, "客户端【" + username + "】下线！", 4, getOnlineUsers()));
+            sendMessage(new Message<>(Dict.SYS_ID, Dict.ALL_ID, "客户端【" + username + "】下线！", 4, getOnlineUsers()));
         }
     }
 
@@ -82,9 +78,9 @@ public class SocketServerServiceImpl implements SocketServerService {
             return;
         }
 
-        if (text.equals(PING_STR)) {
+        if (text.equals(Dict.PING_STR)) {
             //收到心跳包
-            sendMessage(new Message<>(SYS_ID, source, PONG_STR, 1));
+            handleHeartBeat(source);
             return;
         }
 
@@ -104,7 +100,7 @@ public class SocketServerServiceImpl implements SocketServerService {
     @Override
     public void sendMessage(Message message) {
         String target = message.getTarget();
-        if (target.equals(ALL_ID)) {
+        if (target.equals(Dict.ALL_ID)) {
             for (Session session : sessionMap.values()) {
                     if (session.isOpen()) {
                         try{
@@ -138,7 +134,7 @@ public class SocketServerServiceImpl implements SocketServerService {
     public synchronized void sendMessageLock(Message message) {
         log.info("img->synchronized");
         String target = message.getTarget();
-        if (target.equals(ALL_ID)) {
+        if (target.equals(Dict.ALL_ID)) {
             for (Session session : sessionMap.values()) {
                 if (session.isOpen()) {
                     try{
@@ -172,5 +168,32 @@ public class SocketServerServiceImpl implements SocketServerService {
     @Override
     public List<String> getOnlineUsers() {
         return new ArrayList<>(sessionMap.keySet());
+    }
+
+    @Scheduled(cron = "0/5 * * * * ?")
+    public void heartBeatCheck(){
+        if(timeCountMap.size() == 0){
+            return;
+        }
+        log.info("heartbeat check: {}, {}", LocalDateTime.now(), Thread.currentThread().getId());
+        for (String name: timeCountMap.keySet()){
+            HeartBeatMap heartBeatMap = timeCountMap.get(name);
+            if(LocalDateTime.now().getSecond() -heartBeatMap.getLastUpdateTime().getSecond()> 3){
+                if(heartBeatMap.getTimeOutCount().get() > 3){
+                    doClose(sessionMap.get(name));
+                }else{
+                    heartBeatMap.getTimeOutCount().getAndIncrement();
+                }
+            }
+        }
+
+    }
+
+    @Async("heartBeatExecutor")
+    public void handleHeartBeat(String userId){
+        sendMessage(new Message<>(Dict.SYS_ID, userId, Dict.PONG_STR, 1));
+        HeartBeatMap heartBeatMap = timeCountMap.get(userId);
+        heartBeatMap.setLastUpdateTime(LocalDateTime.now());
+        log.info(heartBeatMap.toString());
     }
 }

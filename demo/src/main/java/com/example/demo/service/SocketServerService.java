@@ -14,5 +14,6 @@ public interface SocketServerService {
     void sendMessage(Message message);
     void sendMessageLock(Message message);
     List<String> getOnlineUsers();
-
+    void heartBeatCheck();
+    void handleHeartBeat(String userId);
 }
