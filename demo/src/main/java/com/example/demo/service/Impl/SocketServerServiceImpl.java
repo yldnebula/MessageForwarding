@@ -172,6 +172,7 @@ public class SocketServerServiceImpl implements SocketServerService {
     }
 
     @Scheduled(cron = "0/5 * * * * ?")
+    @Async("heartBeatExecutor")
     public void heartBeatCheck(){
         if(timeCountMap.size() == 0){
             return;
