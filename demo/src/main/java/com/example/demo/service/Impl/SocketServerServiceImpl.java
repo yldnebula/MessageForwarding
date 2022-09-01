@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 @Service
@@ -178,7 +179,7 @@ public class SocketServerServiceImpl implements SocketServerService {
         log.info("heartbeat check: {}, {}", LocalDateTime.now(), Thread.currentThread().getId());
         for (String name: timeCountMap.keySet()){
             HeartBeatMap heartBeatMap = timeCountMap.get(name);
-            if(LocalDateTime.now().getSecond() -heartBeatMap.getLastUpdateTime().getSecond()> 3){
+            if(LocalDateTime.now().getSecond() -heartBeatMap.getLastUpdateTime().getSecond()> 5){
                 if(heartBeatMap.getTimeOutCount().get() > 3){
                     doClose(sessionMap.get(name));
                 }else{
@@ -186,7 +187,6 @@ public class SocketServerServiceImpl implements SocketServerService {
                 }
             }
         }
-
     }
 
     @Async("heartBeatExecutor")

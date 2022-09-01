@@ -16,12 +16,13 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import javax.servlet.http.HttpServletRequest;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Aspect
 @Component
 @Slf4j
 public class LimitRequestAspect {
-    private static ConcurrentHashMap<String, ExpiringMap<String, Integer>> limitMap = new ConcurrentHashMap<>();
+    private static ConcurrentHashMap<String, ExpiringMap<String, AtomicInteger>> limitMap = new ConcurrentHashMap<>();
 
     @Around("@annotation(limitRequest)")
     public Object doAround(ProceedingJoinPoint pjp, LimitRequest limitRequest) throws Throwable {
@@ -33,17 +34,19 @@ public class LimitRequestAspect {
         String ip = request.getLocalAddr();
         String uri = request.getRequestURI();
         String key = "req_limit_".concat(ip);
-        ExpiringMap<String, Integer> uriCountMap = limitMap.getOrDefault(key, ExpiringMap.builder().variableExpiration().build());
-        Integer count = uriCountMap.getOrDefault(uri, 0);
+        ExpiringMap<String, AtomicInteger> uriCountMap = limitMap.getOrDefault(key, ExpiringMap.builder().variableExpiration().build());
+        AtomicInteger count = uriCountMap.getOrDefault(uri, new AtomicInteger(0));
 
-        if(count >= limitRequest.count()){
+        if(count.get() >= limitRequest.count()){
             log.info("用户IP[" + ip + "]访问地址[" + uri + "]超过了限定的次数[" + limitRequest.count() + "]");
             return R.error("请求次数过多，请稍后重试");
-        }else if(count == 0){
+        }else if(count.get() == 0){
             //第一次来
-            uriCountMap.put(uri, count + 1, ExpirationPolicy.CREATED, limitRequest.time(), TimeUnit.MILLISECONDS);
+            count.getAndIncrement();
+            uriCountMap.put(uri, count, ExpirationPolicy.CREATED, limitRequest.time(), TimeUnit.MILLISECONDS);
         }else{
-            uriCountMap.put(uri, count + 1);
+            count.getAndIncrement();
+            uriCountMap.put(uri, count);
         }
         limitMap.put(key, uriCountMap);
 
