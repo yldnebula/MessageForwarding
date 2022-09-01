@@ -1,4 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?><configuration>
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
 
     <springProperty scope="context" name="logPath" source="logback.logPath"/>
 
@@ -25,7 +26,6 @@
         </encoder>
 
     </appender>
-
 
 
     <!-- INFO 输出到文件 -->
@@ -67,7 +67,6 @@
     </appender>
 
 
-
     <!-- WARN 输出到文件 -->
 
     <appender name="warnLog" class="ch.qos.logback.core.rolling.RollingFileAppender">
@@ -105,7 +104,6 @@
         </filter>
 
     </appender>
-
 
 
     <!-- ERROR 输出到文件 -->
@@ -147,7 +145,6 @@
     </appender>
 
 
-
     <!--配置日志输出的级别-->
 
     <root level="INFO">
@@ -160,4 +157,5 @@
 
         <appender-ref ref="errorLog"/>
 
-    </root></configuration>
+    </root>
+</configuration>
